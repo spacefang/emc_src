@@ -59,7 +59,7 @@ void daemon_init() {
 }
 
 void daemon_work() {
-	int log_fd = open("/var/log/my_daemon.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+	int log_fd = open("/var/log/led_test.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (log_fd < 0) {
 		perror("open log error");
 		exit(EXIT_FAILURE);

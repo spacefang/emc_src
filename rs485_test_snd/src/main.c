@@ -13,6 +13,12 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <linux/serial.h>
+#include <stddef.h> // <--- 新增头文件，用于 offsetof 宏
+// ================== 新增头文件 ==================
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include "../../Shared_Memory/shared_data.h" 
+// ===============================================
 #define RCV_BUF_LEN 64
 #define SND_BUF_LEN 64
 #define MAX_SND_BUF_LEN 256
@@ -191,6 +197,35 @@ int main(int argc, char* argv[])
 	{"echo 1 > /sys/class/gpio/gpio200/value","echo 1 > /sys/class/gpio/gpio201/value","echo 1 > /sys/class/gpio/gpio202/value","echo 1 > /sys/class/gpio/gpio204/value","echo 1 > /sys/class/gpio/gpio11/value","echo 1 > /sys/class/gpio/gpio12/value","echo 1 > /sys/class/gpio/gpio16/value","echo 1 > /sys/class/gpio/gpio17/value" }
 	};
 	FILE* log_file = NULL;
+
+	// ================== 新增代码段 1: 初始化共享内存 ==================
+    int shmid;
+    emc_stats_t *shared_stats = NULL;
+
+    // 1. 获取共享内存ID
+    // 使用IPC_CREAT标志，如果共享内存不存在，则创建它
+    shmid = shmget(SHM_KEY, sizeof(emc_stats_t), 0666 | IPC_CREAT);
+    if (shmid == -1) {
+        perror("shmget failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 2. 将共享内存附加到本进程的地址空间
+    shared_stats = (emc_stats_t *)shmat(shmid, NULL, 0);
+    if (shared_stats == (void *)-1) {
+        perror("shmat failed");
+        exit(EXIT_FAILURE);
+    }
+	//=============================核心诊断代码 ========================
+	printf("\n--- rs485_test_snd: Memory Layout Diagnostics ---\n");
+    printf("sizeof(emc_stats_t) according to this program is: %lu\n", sizeof(emc_stats_t));
+    printf("Offset of rs485_stats[0].sent_bytes is: %zu\n", offsetof(emc_stats_t, rs485_stats[0].sent_bytes));
+    printf("Offset of rs485_stats[0].recv_bytes is: %zu\n", offsetof(emc_stats_t, rs485_stats[0].recv_bytes));
+    printf("Offset of udp_stats[0].sent_bytes is:   %zu\n", offsetof(emc_stats_t, udp_stats[0].sent_bytes));
+    printf("Offset of udp_stats[0].recv_bytes is:   %zu\n", offsetof(emc_stats_t, udp_stats[0].recv_bytes));
+
+    //printf("Successfully attached to shared memory for RS485 statistics.\n");
+    // ================================================================
 	int rs485no = atoi(argv[1]);
 	if ((fd = open_port(fd, rs485no)) < 0)
 	{
@@ -237,11 +272,22 @@ int main(int argc, char* argv[])
 			buffer[i + 16] = 0xa5;
 		}
 		buffer[RCV_BUF_LEN - 1] = crc8(buffer, RCV_BUF_LEN - 1);
+
+		//发送数据
 		nwrite = write(fd, buffer, RCV_BUF_LEN);
+		if (nwrite > 0) {
+			sndframeCnt++;
+			// ================== 修改/新增: 更新共享内存的发送统计 ==================
+			if (shared_stats != NULL && rs485no >= 0 && rs485no < NUM_RS485_PORTS) {
+				shared_stats->rs485_stats[rs485no].sent_frames = sndframeCnt;
+				shared_stats->rs485_stats[rs485no].sent_bytes += nwrite;
+			}
+			// ===================================================================
+		}
 
 		get_cur_system_time(timbuffer, sizeof(timbuffer));
 
-		printf("[%s]sndframeCnt = %d nwrite = %d\n", timbuffer, sndframeCnt++, nwrite);
+		printf("[%s]sndframeCnt = %d nwrite = %d\n", timbuffer, sndframeCnt, nwrite);
 
 		// 接收服务器回显的数据
 		for (i = 0; i < RCV_BUF_LEN;i++)
@@ -251,25 +297,37 @@ int main(int argc, char* argv[])
 		usleep(100000);
 		nread = read(fd, buffer, RCV_BUF_LEN);
 
-		if (nread == 0)
+		if (nread <= 0)
 		{
 			printf("[%s]No data on serial%d cnt = %d\n", timbuffer, rs485no, sndframeCnt - rcvframeCnt);
 			fprintf(log_file, "[%s]No data on serial%d cnt = %d\n", timbuffer, rs485no, sndframeCnt- rcvframeCnt);
 			fprintf(log_file, "[%s]sndframeCnt = %d rcvframeCnt = %d nwrite = %d nread = %d\n", timbuffer, sndframeCnt, rcvframeCnt, nwrite, nread);
 			fflush(log_file);
 			fsync(fileno(log_file));
-			continue;
+			//continue;
 		}
+		//==========================新增成功读到数据才能更新接收字节数==================================
+		else{
+			if (shared_stats != NULL && rs485no >= 0 && rs485no < NUM_RS485_PORTS) {
+				shared_stats->rs485_stats[rs485no].recv_bytes += nread;
+			}
+		}
+		//===========================================================================================
 
 		get_cur_system_time(timbuffer, sizeof(timbuffer));
 
 
-
+		//CRC校验
 		crc = crc8(buffer, RCV_BUF_LEN - 1);
-		if (crc != buffer[RCV_BUF_LEN - 1])
+		//if (crc != buffer[RCV_BUF_LEN - 1])
+		if (nread > 0 && crc != buffer[RCV_BUF_LEN - 1])
 		{
 			badCrcCnt++;
-
+			// ================== 修改/新增: 更新共享内存的错误帧数 ==================
+			if (shared_stats != NULL && rs485no >= 0 && rs485no < NUM_RS485_PORTS) {
+				shared_stats->rs485_stats[rs485no].error_frames = badCrcCnt;
+			}
+			// =====================================================================
 			printf("[%s]recvfrom failed badCrcCnt = %d crc = %02x nread = %d\n", timbuffer, badCrcCnt, crc, nread);
 			fprintf(log_file, "[%s]recvfrom failed badCrcCnt = %d crc = %02x nread = %d\n", timbuffer, badCrcCnt, crc, nread);
 			fprintf(log_file, "[%s]sndframeCnt = %d rcvframeCnt = %d nwrite = %d nread = %d\n", timbuffer, sndframeCnt, rcvframeCnt, nwrite, nread);
@@ -279,29 +337,50 @@ int main(int argc, char* argv[])
 			usleep(5000);
 			system(sysgpiocmd[0][rs485no]);
 			clear_serial_buffer(fd);
-			continue;
+			//continue;
 		}
+		//==============================新共享内存的接收帧数==============================
+		else if (nread > 0) // 校验成功
+		{
+			rcvframeCnt++;
+			if (shared_stats != NULL && rs485no >= 0 && rs485no < NUM_RS485_PORTS) {
+				shared_stats->rs485_stats[rs485no].recv_frames = rcvframeCnt;
+			}	
+		}
+		// ===============================================================================
 
-		rcvframeCnt++;
+		// ================== 新增代码段 2: 更新计算字段和最终打印 ==================
+        if (shared_stats != NULL && rs485no >= 0 && rs485no < NUM_RS485_PORTS) {
+            // 更新丢帧数
+            shared_stats->rs485_stats[rs485no].dropped_frames = sndframeCnt - rcvframeCnt;
+        }
+
+		// (原有日志和打印保持不变)
 		printf("[%s]sndframeCnt = %d rcvframeCnt = %d nwrite = %d nread = %d\n", timbuffer, sndframeCnt, rcvframeCnt, nwrite, nread);
 		fprintf(log_file, "[%s]sndframeCnt = %d rcvframeCnt = %d nwrite = %d nread = %d\n", timbuffer, sndframeCnt, rcvframeCnt, nwrite, nread);
 		fflush(log_file);
 		fsync(fileno(log_file));
 
-
+		// (原有数据内容打印保持不变)
 		for (i = 0;i < 16;i++)
 		{
 			printf("%02x ", buffer[i]);
 		}
-
 		printf("...");
-
 		for (i = nread - 16;i < nread;i++)
 		{
 			printf("%02x ", buffer[i]);
 		}
 		printf("\n\n");
+        // =======================================================================
 	}
+
+
+	// ================== 新增代码段 3: 脱离共享内存 ==================
+    if (shared_stats != NULL && shmdt(shared_stats) == -1) {
+        perror("shmdt failed");
+    }
+    // ================================================================
 
 	fclose(log_file);
 	close(fd);

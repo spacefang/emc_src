@@ -1,0 +1,25 @@
+# Makefile for Minimal Shared Memory Test
+
+# 1. 配置您的交叉编译工具链路径
+TOOLCHAIN_PATH := /mnt/d/work/code/hl_src/vendor/tools/host/huanglong/toolchains/aarch64-v100-linux
+# ====================================================================
+
+# 自动配置环境变量和编译器
+export PATH := $(TOOLCHAIN_PATH)/bin:$(PATH)
+CROSS_COMPILE=aarch64-v100-linux-
+CC=$(CROSS_COMPILE)gcc
+# 确保包含了 -I 指令，指向 shared_data.h 所在的目录
+CFLAGS=-Wall -I./Shared_Memory 
+LDFLAGS = -L$(TOOLCHAIN_PATH)/target/lib -static
+
+# 默认目标，编译 writer 和 reader
+all: writer reader
+
+writer: writer.c Shared_Memory/shared_data.h
+	$(CC) $(CFLAGS) -o writer writer.c $(LDFLAGS)
+
+reader: reader.c Shared_Memory/shared_data.h
+	$(CC) $(CFLAGS) -o reader reader.c $(LDFLAGS)
+
+clean:
+	rm -f writer reader

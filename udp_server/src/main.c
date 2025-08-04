@@ -177,6 +177,7 @@ int main(int argc, char* argv[])
         if (nwrite == -1)
         {
             perror("sendto failed\n");
+            fprintf(log_file, "[%s]sendto failed\n", timbuffer);
         }
     }
     fclose(log_file);

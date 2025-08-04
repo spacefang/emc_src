@@ -9,6 +9,12 @@
 #include <sys/time.h>
 #include <sys/stat.h> 
 
+// ================== 新增头文件 ==================
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include "../../Shared_Memory/shared_data.h" // 新增共享内存头文件
+// ===============================================
+
 #define BUFFER_SIZE 1024
 // ./udp_client 192.168.3.10 9091 192.168.3.100 9092 （本地ip port 服务端ip port)
 
@@ -109,11 +115,48 @@ int main(int argc, char* argv[])
 	int rcvframeCnt = 0;
 	int i = 0;
 	int ipfrg[4] = { 0,0,0,0 };
-	char* sysgpiocmd[2][4] = {
-		{"echo 0 > /sys/class/gpio/gpio206/value","echo 0 > /sys/class/gpio/gpio207/value","echo 0 > /sys/class/gpio/gpio208/value","echo 0 > /sys/class/gpio/gpio209/value"},
-		{"echo 1 > /sys/class/gpio/gpio206/value","echo 1 > /sys/class/gpio/gpio207/value","echo 1 > /sys/class/gpio/gpio208/value","echo 1 > /sys/class/gpio/gpio209/value" }
+	int timeoutCnt = 0; // 新增：专门用于统计超时的计数器
+	char* sysgpiocmd[2][8] = {
+		{"echo 0 > /sys/class/gpio/gpio206/value",
+		 "echo 0 > /sys/class/gpio/gpio207/value",
+		 "echo 0 > /sys/class/gpio/gpio208/value",
+		 "echo 0 > /sys/class/gpio/gpio209/value",
+		 "echo 0 > /sys/class/gpio/gpio210/value", 
+         "echo 0 > /sys/class/gpio/gpio211/value", 
+         "echo 0 > /sys/class/gpio/gpio212/value", 
+         "echo 0 > /sys/class/gpio/gpio213/value"},
+		{"echo 1 > /sys/class/gpio/gpio206/value",
+		 "echo 1 > /sys/class/gpio/gpio207/value",
+		 "echo 1 > /sys/class/gpio/gpio208/value",
+		 "echo 1 > /sys/class/gpio/gpio209/value",
+		 "echo 1 > /sys/class/gpio/gpio210/value", 
+         "echo 1 > /sys/class/gpio/gpio211/value", 
+         "echo 1 > /sys/class/gpio/gpio212/value",
+         "echo 1 > /sys/class/gpio/gpio213/value" 
+		}
 	};
 	FILE* log_file = NULL;
+
+	// ================== 新增代码段 1: 初始化共享内存 ==================
+    int shmid;
+    emc_stats_t *shared_stats = NULL;
+
+    // 1. 获取共享内存ID
+    shmid = shmget(SHM_KEY, sizeof(emc_stats_t), 0666 | IPC_CREAT);
+    if (shmid == -1) {
+        perror("shmget failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 2. 将共享内存附加到本进程的地址空间
+    shared_stats = (emc_stats_t *)shmat(shmid, NULL, 0);
+    if (shared_stats == (void *)-1) {
+        perror("shmat failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Successfully attached to shared memory for UDP statistics.\n");
+    // ================================================================
+
 	if (argc != 5)
 	{
 		usage(argv[0]);
@@ -171,8 +214,18 @@ int main(int argc, char* argv[])
 		perror("setsockopt failed:");
 	}
 
+	//解析IP地址，用于确定网口索引
 	sscanf(argv[1], "%d.%d.%d.%d", &ipfrg[0], &ipfrg[1], &ipfrg[2], &ipfrg[3]);
 	printf("ip=%d.%d.%d.%d\n", ipfrg[0], ipfrg[1], ipfrg[2], ipfrg[3]);
+
+	// ================== 新增代码段 2: 确定网口索引 ==================
+    // 根据IP地址的第三个段来确定本进程对应的网口索引 (192.168.1.x -> 0, 192.168.2.x -> 1, ...)
+    int port_index = -1;
+    if (ipfrg[2] > 0 && ipfrg[2] <= NUM_UDP_PORTS) {
+        port_index = ipfrg[2] - 1;
+    }
+    // ===============================================================
+
 	get_cur_system_time_filename(logfilename, sizeof(logfilename), ipfrg[2]);
 	get_cur_system_date_dirname(logdirname, sizeof(logdirname));
 	if (access(logdirname, F_OK) != 0)
@@ -184,24 +237,32 @@ int main(int argc, char* argv[])
 
 	while (1)
 	{
-		// 向服务器发送数据
-
+		//构造发送数据
 		for (i = 0; i < BUFFER_SIZE;i++)
 		{
 			buffer[i] = i;
 		}
+		// 向服务器发送数据
 		// buffer[BUFFER_SIZE - 1] = crc8(BUFFER_SIZE, RCV_BUF_LEN - 1);
 		nwrite = sendto(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&servaddr, sizeof(servaddr));
-		if (nwrite == -1)
+		if (nwrite > 0)
 		{
-			perror("sendto failed\n");
+			sndframeCnt++;
+            // ================== 修改/新增: 更新共享内存的发送统计 ==================
+            if (shared_stats != NULL && port_index != -1) {
+                shared_stats->udp_stats[port_index].sent_packets = sndframeCnt;
+                shared_stats->udp_stats[port_index].sent_bytes += nwrite;
+            }
+            // ===================================================================
+		} else {
+            perror("sendto failed\n");
 			continue;
-		}
+        }
 
 		get_cur_system_time(timbuffer, sizeof(timbuffer));
 
 		//printf("send to server  (%s:%d): nwrite = %ld\n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port), nwrite);
-		printf("[%s]sndframeCnt = %d nwrite = %ld\n", timbuffer, sndframeCnt++, nwrite);
+		printf("[%s]sndframeCnt = %d nwrite = %ld\n", timbuffer, sndframeCnt, nwrite);
 
 		usleep(200000);
 
@@ -214,8 +275,15 @@ int main(int argc, char* argv[])
 	    len = sizeof(servaddr);
 		nread = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&servaddr, &len);
 		get_cur_system_time(timbuffer, sizeof(timbuffer));
+		//超时发生
 		if (nread == -1)
 		{
+			// ================== 修改/新增: 更新共享内存的超时统计 ==================
+			timeoutCnt++;
+            if (shared_stats != NULL && port_index != -1) {
+                shared_stats->udp_stats[port_index].timeout_count = timeoutCnt;
+            }
+            // ===================================================================
 			printf("[%s]recvfrom failed badcnt = %d\n", timbuffer, sndframeCnt- rcvframeCnt);
 			fprintf(log_file, "[%s]recvfrom failed badcnt = %d\n", timbuffer, sndframeCnt - rcvframeCnt);
 			fprintf(log_file, "[%s]sndframeCnt = %d rcvframeCnt = %d nwrite = %ld nread = %ld\n", timbuffer, sndframeCnt, rcvframeCnt, nwrite, nread);
@@ -226,10 +294,20 @@ int main(int argc, char* argv[])
 			system(sysgpiocmd[0][ipfrg[2]-1]);
 			continue;
 		}
+		 else // 成功接收
+        {
+            rcvframeCnt++;
+            // ================== 修改/新增: 更新共享内存的接收统计 ==================
+            if (shared_stats != NULL && port_index != -1) {
+                shared_stats->udp_stats[port_index].recv_packets = rcvframeCnt;
+                shared_stats->udp_stats[port_index].recv_bytes += nread;
+            }
+            // ===================================================================
+        }
 
 		//printf("recv from client  (%s:%d): nread = %ld \n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port), nread);
 
-		printf("[%s]rcvframeCnt = %d nread = %ld\n", timbuffer, rcvframeCnt++, nread);
+		printf("[%s]rcvframeCnt = %d nread = %ld\n", timbuffer, rcvframeCnt, nread);
 		for (i = 0;i < 16;i++)
 		{
 			printf("%02x ", buffer[i]);
@@ -247,6 +325,11 @@ int main(int argc, char* argv[])
 		fflush(log_file);
 		fsync(fileno(log_file));	
 	}
+	// ================== 新增代码段 3: 脱离共享内存 ==================
+    if (shared_stats != NULL && shmdt(shared_stats) == -1) {
+        perror("shmdt failed");
+    }
+    // ================================================================
 	fclose(log_file);
 	close(sockfd);
 	return 0;

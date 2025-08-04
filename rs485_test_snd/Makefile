@@ -1,5 +1,5 @@
 
-PATH := $(PATH):/work/code/hl_src/vendor/tools/host/huanglong/toolchains/aarch64-v100-linux/bin
+PATH := $(PATH):/mnt/d/work/code/hl_src/vendor/tools/host/huanglong/toolchains/aarch64-v100-linux/bin
 
 # 定义交叉编译工具链的前缀
 CROSS_COMPILE=aarch64-v100-linux-
@@ -13,7 +13,7 @@ LD=$(CC)
 # 定义编译器标志
 CFLAGS=-Wall
 
-LDFLAGS = -L/work/code/hl_src/vendor/tools/host/huanglong/toolchains/aarch64-v100-linux/target/lib -static
+LDFLAGS = -L/mnt/d/work/code/hl_src/vendor/tools/host/huanglong/toolchains/aarch64-v100-linux/target/lib -static
 
 
 

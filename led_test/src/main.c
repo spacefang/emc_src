@@ -10,7 +10,7 @@
 
 // 守护进程初始化函数
 void daemon_init() {
-	pid_t pid;
+	pid_t pid;//声明一个专门用来存放进程ID的变量
 
 	// 步骤1：fork子进程，父进程退出
 	if ((pid = fork()) < 0) {
@@ -59,7 +59,7 @@ void daemon_init() {
 }
 
 void daemon_work() {
-	int log_fd = open("/var/log/my_daemon.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+	int log_fd = open("/var/log/led_test.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (log_fd < 0) {
 		perror("open log error");
 		exit(EXIT_FAILURE);
@@ -70,9 +70,10 @@ void daemon_work() {
 		char log_msg[256];
 		strftime(log_msg, sizeof(log_msg), "running current time %Y-%m-%d %H:%M:%S\n", localtime(&now));
 		write(log_fd, log_msg, strlen(log_msg));
-		system("echo 1 > /sys/class/gpio/gpio20/value");
+		//----点亮LED灯-----
+		system("echo 1 > /sys/class/gpio/gpio20/value");//导出管脚20
 		sleep(1);
-		system("echo 0 > /sys/class/gpio/gpio20/value");
+		system("echo 0 > /sys/class/gpio/gpio20/value");//设置为输出
 		sleep(1);
 	}
 	close(log_fd);

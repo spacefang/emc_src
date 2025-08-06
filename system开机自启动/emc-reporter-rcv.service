@@ -1,0 +1,15 @@
+[Unit]
+Description=EMC Test Command Receiver Service (Receiver)
+After=network-online.target
+
+[Service]
+ExecStart=/mnt/EMMC/emc_test01/reporter_rcv
+WorkingDirectory=/mnt/EMMC/emc_test01/
+Restart=always
+RestartSec=5
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

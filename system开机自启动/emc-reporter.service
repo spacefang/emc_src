@@ -1,0 +1,27 @@
+[Unit]
+Description=EMC Test Reporter Service (Sender)
+# Wants=network-online.target 这表示服务期望网络在线，但不强制要求
+After=network-online.target
+
+[Service]
+# 定义程序的启动命令，请务必使用绝对路径
+ExecStart=/mnt/EMMC/emc_test01/reporter
+
+# 定义程序的工作目录
+WorkingDirectory=/mnt/EMMC/emc_test01/
+
+# 关键配置：如果程序崩溃，总是自动重启
+Restart=always
+# 重启前等待5秒
+RestartSec=5
+
+# 运行程序的用户（通常是root）
+User=root
+
+# 将程序的标准输出和错误输出重定向到 systemd 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+# 定义这个服务应该在哪个系统级别下被启用
+WantedBy=multi-user.target

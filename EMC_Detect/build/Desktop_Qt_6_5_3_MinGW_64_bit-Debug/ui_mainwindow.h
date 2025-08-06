@@ -12,10 +12,13 @@
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGroupBox>
+#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
@@ -32,6 +35,13 @@ public:
     QTabWidget *mainTabWidget;
     QWidget *senderTab;
     QVBoxLayout *verticalLayout_2;
+    QGroupBox *groupBox;
+    QHBoxLayout *horizontalLayout;
+    QPushButton *clearButton;
+    QPushButton *startButton;
+    QPushButton *stopButton;
+    QPushButton *syncTimeButton;
+    QSpacerItem *horizontalSpacer;
     QGroupBox *rs485GroupBox_1;
     QVBoxLayout *verticalLayout_3;
     QTableWidget *rs485TableWidget_1;
@@ -70,6 +80,39 @@ public:
         senderTab->setObjectName("senderTab");
         verticalLayout_2 = new QVBoxLayout(senderTab);
         verticalLayout_2->setObjectName("verticalLayout_2");
+        groupBox = new QGroupBox(senderTab);
+        groupBox->setObjectName("groupBox");
+        groupBox->setMinimumSize(QSize(0, 40));
+        horizontalLayout = new QHBoxLayout(groupBox);
+        horizontalLayout->setObjectName("horizontalLayout");
+        clearButton = new QPushButton(groupBox);
+        clearButton->setObjectName("clearButton");
+        clearButton->setMaximumSize(QSize(1000, 16777215));
+
+        horizontalLayout->addWidget(clearButton);
+
+        startButton = new QPushButton(groupBox);
+        startButton->setObjectName("startButton");
+
+        horizontalLayout->addWidget(startButton);
+
+        stopButton = new QPushButton(groupBox);
+        stopButton->setObjectName("stopButton");
+
+        horizontalLayout->addWidget(stopButton);
+
+        syncTimeButton = new QPushButton(groupBox);
+        syncTimeButton->setObjectName("syncTimeButton");
+
+        horizontalLayout->addWidget(syncTimeButton);
+
+        horizontalSpacer = new QSpacerItem(1073, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout->addItem(horizontalSpacer);
+
+
+        verticalLayout_2->addWidget(groupBox);
+
         rs485GroupBox_1 = new QGroupBox(senderTab);
         rs485GroupBox_1->setObjectName("rs485GroupBox_1");
         verticalLayout_3 = new QVBoxLayout(rs485GroupBox_1);
@@ -310,6 +353,11 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "EMC\346\265\213\346\216\247\344\270\200\344\275\223\345\214\226\345\256\236\346\227\266\347\233\221\346\216\247\347\263\273\347\273\237 v1.0", nullptr));
+        groupBox->setTitle(QCoreApplication::translate("MainWindow", "\345\205\250\345\261\200\346\216\247\345\210\266", nullptr));
+        clearButton->setText(QCoreApplication::translate("MainWindow", "\345\244\215\344\275\215\346\211\200\346\234\211\347\273\237\350\256\241\346\225\260\346\215\256  ", nullptr));
+        startButton->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213\346\211\200\346\234\211\346\265\213\350\257\225", nullptr));
+        stopButton->setText(QCoreApplication::translate("MainWindow", "\345\201\234\346\255\242\346\211\200\346\234\211\346\265\213\350\257\225", nullptr));
+        syncTimeButton->setText(QCoreApplication::translate("MainWindow", "\345\220\214\346\255\245\350\256\276\345\244\207\346\227\266\351\227\264", nullptr));
         rs485GroupBox_1->setTitle(QCoreApplication::translate("MainWindow", "RS485\344\270\262\345\217\243\347\212\266\346\200\201", nullptr));
         QTableWidgetItem *___qtablewidgetitem = rs485TableWidget_1->horizontalHeaderItem(0);
         ___qtablewidgetitem->setText(QCoreApplication::translate("MainWindow", "\347\212\266\346\200\201", nullptr));

@@ -3,11 +3,9 @@
 
 #include <QObject>
 #include <QByteArray>
+#include <QTcpSocket>
 
-// --- 数据结构定义 ---
-// 结构体与 shared_data.h 和二进制协议完全对应
-
-// 用于存储RS485串口的完整统计数据
+// --- 数据结构定义 (这部分不变) ---
 struct Rs485Data {
     quint8 portNumber;
     quint32 sentFrames;
@@ -18,7 +16,6 @@ struct Rs485Data {
     quint64 recvBytes;
 };
 
-// 用于存储UDP网口的完整统计数据
 struct UdpData {
     quint8 portNumber;
     quint32 sentPackets;
@@ -38,24 +35,28 @@ public:
     explicit PacketParser(QObject *parent = nullptr);
 
 public slots:
-    // 这是一个槽函数，用于接收从TcpServer传来的原始二进制数据
-    void processData(const QByteArray &data);
+    // ================== 核心修改点 1 ==================
+    // 修改槽函数声明，让它能接收 client 指针和 data
+    void processData(QTcpSocket *client, const QByteArray &data);
+    // ===============================================
 
 signals:
+    // 当成功确认客户端身份时，发射此信号
+    void identityConfirmed(QTcpSocket *client, const QString &identity);
     // 当成功解析出一个RS485报文时，发射此信号
     void rs485DataReady(const Rs485Data &data);
-
     // 当成功解析出一个UDP报文时，发射此信号
     void udpDataReady(const UdpData &data);
 
 private:
-    QByteArray m_buffer; // 内部缓冲区，用于处理粘包、分包问题
+    QByteArray m_buffer;
 
-    // CRC16-Modbus校验函数
     quint16 crc16Modbus(const QByteArray &data);
 
-    // 尝试从缓冲区中解析报文
-    void parseBuffer();
+    // ================== 核心修改点 2 ==================
+    // 修改函数声明，让它也能接收 client 指针
+    void parseBuffer(QTcpSocket *client);
+    // ===============================================
 };
 
 #endif // PACKETPARSER_H

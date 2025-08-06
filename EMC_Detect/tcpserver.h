@@ -19,10 +19,16 @@ public:
     void startServer(quint16 port);
 
 signals:
-    // 定义一个信号，当收到新的二进制数据时发射出去
-    // QByteArray 是Qt中用于处理字节数组的类
-    void newDataReady(const QByteArray &data);
+    // ====================== 修改和新增这里的信号 ======================
+    // 当有新的客户端成功连接时发出
+    void clientConnected(QTcpSocket *client);
 
+    // 当有客户端断开连接时发出
+    void clientDisconnected();
+
+    // 当收到任何客户端的新数据时发出
+    void newDataReady(QTcpSocket *client, const QByteArray &data);
+    // =============================================================
 protected:
     // 当有新的客户端连接请求时，Qt会自动调用这个虚函数
     // 我们需要重写它，来创建自己的 ClientHandler 线程

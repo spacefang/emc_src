@@ -8,36 +8,36 @@ ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
 
 void ClientHandler::run()
 {
-    // 在新线程中创建socket对象，避免跨线程问题
     m_socket = new QTcpSocket();
-
-    // 将socket与传入的描述符关联起来
     if (!m_socket->setSocketDescriptor(m_socketDescriptor)) {
         qDebug() << "Failed to set socket descriptor:" << m_socket->errorString();
         delete m_socket;
         return;
     }
 
+    // ====================== 核心修改点 ======================
+    // 将socket的disconnected信号连接到我们自己的槽函数
+    // 这样当连接断开时，我们的代码能立刻知道
+    connect(m_socket, &QTcpSocket::disconnected, this, &ClientHandler::onSocketDisconnected);
+    // =========================================================
+
+
     qDebug() << "Client handler thread started for" << m_socket->peerAddress().toString();
 
-    // 使用事件循环，等待数据到来
-    // waitForReadyRead会阻塞线程，直到有数据可读或超时
-    while (m_socket->waitForConnected())
-    {
-        if (m_socket->waitForReadyRead(-1)) // -1表示无限期等待
-        {
-            // 读取所有可用的数据
-            QByteArray data = m_socket->readAll();
-            if (!data.isEmpty())
-            {
-                // 发射信号，将读取到的数据传递出去
-                emit newDataReady(data);
-            }
-        }
-    }
+    // 使用事件循环来保持线程活跃，等待信号触发
+    // exec()会启动一个事件循环，直到我们调用quit()
+    exec();
 
-    // 当连接断开时，循环会退出
-    qDebug() << "Client disconnected.";
-    m_socket->disconnectFromHost();
-    delete m_socket;
+    // 当事件循环结束后，清理资源
+    qDebug() << "Client handler thread finished for" << m_socket->peerAddress().toString();
+    m_socket->deleteLater(); // 使用deleteLater确保安全删除
+}
+
+
+// --- 新增的槽函数实现 ---
+void ClientHandler::onSocketDisconnected()
+{
+    qDebug() << "Socket disconnected signal received in thread.";
+    // 退出事件循环，这将导致run()函数结束，最终线程被安全销毁
+    quit();
 }

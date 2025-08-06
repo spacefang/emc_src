@@ -16,7 +16,12 @@ public:
 
 signals:
     // 当从socket中读取到新的数据时，发射此信号
-    void newDataReady(const QByteArray &data);
+    // 新的信号会同时传递是哪个客户端(socket)发送了什么数据(data)
+    void newDataReady(QTcpSocket *client, const QByteArray &data);
+
+private slots:
+    // 新增一个私有槽，用于处理socket断开连接的事件
+    void onSocketDisconnected();
 
 private:
     qintptr m_socketDescriptor; // 套接字描述符，用于标识客户端连接

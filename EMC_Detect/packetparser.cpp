@@ -10,14 +10,35 @@ const int UDP_PACKET_LEN   = 34;
 
 PacketParser::PacketParser(QObject *parent) : QObject(parent) {}
 
-void PacketParser::processData(const QByteArray &data)
+// ================== 核心修改点 3 ==================
+// 函数签名现在与.h文件中的声明完全匹配
+void PacketParser::processData(QTcpSocket *client, const QByteArray &data)
 {
     m_buffer.append(data);
-    parseBuffer();
+
+    // 优先处理身份识别
+    if (m_buffer.startsWith("ID:")) {
+        QString id_string = QString::fromUtf8(m_buffer);
+        if (id_string.contains("SENDER")) {
+            emit identityConfirmed(client, "SENDER");
+            m_buffer.clear();
+            return;
+        } else if (id_string.contains("RECEIVER")) {
+            emit identityConfirmed(client, "RECEIVER");
+            m_buffer.clear();
+            return;
+        }
+    }
+
+    // 如果不是身份信息，则按原来的逻辑处理
+    parseBuffer(client); // 调用现在也匹配了
 }
 
-void PacketParser::parseBuffer()
+// ================== 核心修改点 4 ==================
+// 函数签名现在与.h文件中的声明完全匹配
+void PacketParser::parseBuffer(QTcpSocket *client)
 {
+    // 这个函数内部的解析逻辑和之前一样，是正确的
     while (true)
     {
         if (m_buffer.size() < 2)
@@ -38,10 +59,10 @@ void PacketParser::parseBuffer()
             return;
 
         QByteArray packet = m_buffer.left(packetLen);
-        m_buffer.remove(0, packetLen); // 立即移除，防止校验失败时死循环
+        m_buffer.remove(0, packetLen);
 
         quint16 calculatedCrc = crc16Modbus(packet.left(packetLen - 2));
-        quint16 receivedCrc = (quint8)packet[packetLen - 2] | ((quint8)packet[packetLen - 1] << 8); // 正确的小端CRC读取
+        quint16 receivedCrc = (quint8)packet[packetLen - 2] | ((quint8)packet[packetLen - 1] << 8);
 
         if (calculatedCrc != receivedCrc) {
             qDebug() << "CRC check failed! Packet discarded.";
@@ -50,13 +71,12 @@ void PacketParser::parseBuffer()
 
         QDataStream stream(&packet, QIODevice::ReadOnly);
         stream.setByteOrder(QDataStream::LittleEndian);
-        stream.skipRawData(2); // 跳过类型和长度
+        stream.skipRawData(2);
 
         if (packetType == PKT_TYPE_RS485)
         {
             Rs485Data parsedData;
             stream >> parsedData.portNumber;
-            // stream.skipRawData(3); // <<< 已删除此错误行
             stream >> parsedData.sentFrames >> parsedData.recvFrames >> parsedData.errorFrames >> parsedData.droppedFrames;
             stream >> parsedData.sentBytes >> parsedData.recvBytes;
             emit rs485DataReady(parsedData);
@@ -65,7 +85,6 @@ void PacketParser::parseBuffer()
         {
             UdpData parsedData;
             stream >> parsedData.portNumber;
-            // stream.skipRawData(3); // <<< 已删除此错误行
             stream >> parsedData.sentPackets >> parsedData.recvPackets >> parsedData.timeoutCount;
             stream >> parsedData.sentBytes >> parsedData.recvBytes;
             emit udpDataReady(parsedData);
@@ -88,3 +107,7 @@ quint16 PacketParser::crc16Modbus(const QByteArray &data)
     }
     return crc;
 }
+
+// ================== 核心修改点 5 ==================
+// 删除了文件末尾多余的 '}'
+// ===============================================

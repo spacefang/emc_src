@@ -35,10 +35,11 @@ TARGETS := \
 	bin/udp_client \
 	bin/udp_server \
 	bin/reporter \
-	bin/led_test \
-	bin/date_test \
-	bin/usb_test \
-	bin/watchdog_test
+	bin/reporter_rcv
+# 	bin/led_test \
+# 	bin/date_test \
+# 	bin/usb_test \
+# 	bin/watchdog_test
 
 # 默认目标，编译所有程序
 all: $(TARGETS)
@@ -54,6 +55,13 @@ bin/reporter: obj/reporter.o Shared_Memory/shared_data.h
 	$(CC) obj/reporter.o -o $@ $(LDFLAGS)
 obj/reporter.o: Shared_Memory/reporter.c Shared_Memory/shared_data.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# ================== 新增 reporter_rcv 的编译规则 ==================
+bin/reporter_rcv: obj/reporter_rcv.o
+	$(CC) obj/reporter_rcv.o -o $@ $(LDFLAGS)
+obj/reporter_rcv.o: Shared_Memory/reporter_rcv.c
+	$(CC) $(CFLAGS) -c $< -o $@
+# ================================================================
 
 # 编译 rs485_test_snd
 bin/rs485_test_snd: obj/rs485_snd_main.o obj/rs485_snd_crc.o Shared_Memory/shared_data.h

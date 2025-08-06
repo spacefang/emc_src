@@ -39,8 +39,12 @@ namespace {
 struct qt_meta_stringdata_CLASSPacketParserENDCLASS_t {};
 static constexpr auto qt_meta_stringdata_CLASSPacketParserENDCLASS = QtMocHelpers::stringData(
     "PacketParser",
-    "rs485DataReady",
+    "identityConfirmed",
     "",
+    "QTcpSocket*",
+    "client",
+    "identity",
+    "rs485DataReady",
     "Rs485Data",
     "data",
     "udpDataReady",
@@ -49,32 +53,44 @@ static constexpr auto qt_meta_stringdata_CLASSPacketParserENDCLASS = QtMocHelper
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSPacketParserENDCLASS_t {
-    uint offsetsAndSizes[16];
+    uint offsetsAndSizes[24];
     char stringdata0[13];
-    char stringdata1[15];
+    char stringdata1[18];
     char stringdata2[1];
-    char stringdata3[10];
-    char stringdata4[5];
-    char stringdata5[13];
-    char stringdata6[8];
-    char stringdata7[12];
+    char stringdata3[12];
+    char stringdata4[7];
+    char stringdata5[9];
+    char stringdata6[15];
+    char stringdata7[10];
+    char stringdata8[5];
+    char stringdata9[13];
+    char stringdata10[8];
+    char stringdata11[12];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSPacketParserENDCLASS_t::offsetsAndSizes) + ofs), len 
 Q_CONSTINIT static const qt_meta_stringdata_CLASSPacketParserENDCLASS_t qt_meta_stringdata_CLASSPacketParserENDCLASS = {
     {
         QT_MOC_LITERAL(0, 12),  // "PacketParser"
-        QT_MOC_LITERAL(13, 14),  // "rs485DataReady"
-        QT_MOC_LITERAL(28, 0),  // ""
-        QT_MOC_LITERAL(29, 9),  // "Rs485Data"
-        QT_MOC_LITERAL(39, 4),  // "data"
-        QT_MOC_LITERAL(44, 12),  // "udpDataReady"
-        QT_MOC_LITERAL(57, 7),  // "UdpData"
-        QT_MOC_LITERAL(65, 11)   // "processData"
+        QT_MOC_LITERAL(13, 17),  // "identityConfirmed"
+        QT_MOC_LITERAL(31, 0),  // ""
+        QT_MOC_LITERAL(32, 11),  // "QTcpSocket*"
+        QT_MOC_LITERAL(44, 6),  // "client"
+        QT_MOC_LITERAL(51, 8),  // "identity"
+        QT_MOC_LITERAL(60, 14),  // "rs485DataReady"
+        QT_MOC_LITERAL(75, 9),  // "Rs485Data"
+        QT_MOC_LITERAL(85, 4),  // "data"
+        QT_MOC_LITERAL(90, 12),  // "udpDataReady"
+        QT_MOC_LITERAL(103, 7),  // "UdpData"
+        QT_MOC_LITERAL(111, 11)   // "processData"
     },
     "PacketParser",
-    "rs485DataReady",
+    "identityConfirmed",
     "",
+    "QTcpSocket*",
+    "client",
+    "identity",
+    "rs485DataReady",
     "Rs485Data",
     "data",
     "udpDataReady",
@@ -91,26 +107,28 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSPacketParserENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-       3,   14, // methods
+       4,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       2,       // signalCount
+       3,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   32,    2, 0x06,    1 /* Public */,
-       5,    1,   35,    2, 0x06,    3 /* Public */,
+       1,    2,   38,    2, 0x06,    1 /* Public */,
+       6,    1,   43,    2, 0x06,    4 /* Public */,
+       9,    1,   46,    2, 0x06,    6 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       7,    1,   38,    2, 0x0a,    5 /* Public */,
+      11,    2,   49,    2, 0x0a,    8 /* Public */,
 
  // signals: parameters
-    QMetaType::Void, 0x80000000 | 3,    4,
-    QMetaType::Void, 0x80000000 | 6,    4,
+    QMetaType::Void, 0x80000000 | 3, QMetaType::QString,    4,    5,
+    QMetaType::Void, 0x80000000 | 7,    8,
+    QMetaType::Void, 0x80000000 | 10,    8,
 
  // slots: parameters
-    QMetaType::Void, QMetaType::QByteArray,    4,
+    QMetaType::Void, 0x80000000 | 3, QMetaType::QByteArray,    4,    8,
 
        0        // eod
 };
@@ -124,6 +142,10 @@ Q_CONSTINIT const QMetaObject PacketParser::staticMetaObject = { {
     qt_incomplete_metaTypeArray<qt_meta_stringdata_CLASSPacketParserENDCLASS_t,
         // Q_OBJECT / Q_GADGET
         QtPrivate::TypeAndForceComplete<PacketParser, std::true_type>,
+        // method 'identityConfirmed'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<QTcpSocket *, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'rs485DataReady'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const Rs485Data &, std::false_type>,
@@ -132,6 +154,7 @@ Q_CONSTINIT const QMetaObject PacketParser::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const UdpData &, std::false_type>,
         // method 'processData'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<QTcpSocket *, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QByteArray &, std::false_type>
     >,
     nullptr
@@ -143,24 +166,50 @@ void PacketParser::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         auto *_t = static_cast<PacketParser *>(_o);
         (void)_t;
         switch (_id) {
-        case 0: _t->rs485DataReady((*reinterpret_cast< std::add_pointer_t<Rs485Data>>(_a[1]))); break;
-        case 1: _t->udpDataReady((*reinterpret_cast< std::add_pointer_t<UdpData>>(_a[1]))); break;
-        case 2: _t->processData((*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[1]))); break;
+        case 0: _t->identityConfirmed((*reinterpret_cast< std::add_pointer_t<QTcpSocket*>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 1: _t->rs485DataReady((*reinterpret_cast< std::add_pointer_t<Rs485Data>>(_a[1]))); break;
+        case 2: _t->udpDataReady((*reinterpret_cast< std::add_pointer_t<UdpData>>(_a[1]))); break;
+        case 3: _t->processData((*reinterpret_cast< std::add_pointer_t<QTcpSocket*>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[2]))); break;
         default: ;
+        }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+        case 0:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QTcpSocket* >(); break;
+            }
+            break;
+        case 3:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QTcpSocket* >(); break;
+            }
+            break;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
+            using _t = void (PacketParser::*)(QTcpSocket * , const QString & );
+            if (_t _q_method = &PacketParser::identityConfirmed; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 0;
+                return;
+            }
+        }
+        {
             using _t = void (PacketParser::*)(const Rs485Data & );
             if (_t _q_method = &PacketParser::rs485DataReady; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 0;
+                *result = 1;
                 return;
             }
         }
         {
             using _t = void (PacketParser::*)(const UdpData & );
             if (_t _q_method = &PacketParser::udpDataReady; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 1;
+                *result = 2;
                 return;
             }
         }
@@ -186,28 +235,35 @@ int PacketParser::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 3)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 3;
+        _id -= 4;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 3)
-            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 3;
+        if (_id < 4)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 4;
     }
     return _id;
 }
 
 // SIGNAL 0
-void PacketParser::rs485DataReady(const Rs485Data & _t1)
+void PacketParser::identityConfirmed(QTcpSocket * _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);
 }
 
 // SIGNAL 1
-void PacketParser::udpDataReady(const UdpData & _t1)
+void PacketParser::rs485DataReady(const Rs485Data & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 1, _a);
+}
+
+// SIGNAL 2
+void PacketParser::udpDataReady(const UdpData & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 2, _a);
 }
 QT_WARNING_POP
